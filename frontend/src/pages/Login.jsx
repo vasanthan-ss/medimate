@@ -46,7 +46,7 @@ function Login() {
           value={formData.email}
           onChange={handleChange}
         />
-
+        <br></br>
         <input
           name="password"
           type="password"
@@ -54,7 +54,7 @@ function Login() {
           value={formData.password}
           onChange={handleChange}
         />
-
+        <br></br>
         <button type="submit">Login</button>
       </form>
 

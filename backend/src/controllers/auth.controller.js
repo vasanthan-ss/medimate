@@ -17,9 +17,21 @@ exports.register = async (req, res) => {
         message: "Name, email, and password are required",
       });
     }
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+    
+    if(phone.length <10 || !(phone && /^\d+$/.test(phone))){
+      return res.status(400).json({
+        message: "Invalid phone number",
+      });
+    }
 
+    const cleanEmail = email.trim().toLowerCase();
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
     });
 
     if (existingUser) {
@@ -32,9 +44,9 @@ exports.register = async (req, res) => {
 
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
-        phone,
+        name: name.trim(),
+        email: cleanEmail,
+        phone: phone ? phone.trim() : null,
         passwordHash,
       },
       select: {
@@ -46,7 +58,7 @@ exports.register = async (req, res) => {
         createdAt: true,
       },
     });
-
+    
     const token = generateToken(user.id);
 
     return res.status(201).json({
@@ -72,8 +84,10 @@ exports.login = async (req, res) => {
       });
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
     });
 
     if (!user) {

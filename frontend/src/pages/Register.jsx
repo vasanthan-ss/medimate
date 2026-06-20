@@ -37,7 +37,7 @@ function Register() {
   return (
     <div className="auth-page">
       <h2>Create Account</h2>
-
+      <br></br>
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <form onSubmit={handleSubmit}>
@@ -46,7 +46,7 @@ function Register() {
           placeholder="Name"
           value={formData.name}
           onChange={handleChange}
-        />
+        /><br></br>
 
         <input
           name="email"
@@ -54,14 +54,14 @@ function Register() {
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-        />
+        /><br></br>
 
         <input
           name="phone"
           placeholder="Phone"
           value={formData.phone}
           onChange={handleChange}
-        />
+        /><br></br>
 
         <input
           name="password"
@@ -69,13 +69,14 @@ function Register() {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-        />
+        /><br></br>
 
         <button type="submit">Register</button>
       </form>
-
+      <br></br>
+      <br></br>
       <p>
-        Already have an account? <Link to="/login">Login</Link>
+        Already have an account?<br></br> <Link to="/login">Login</Link>
       </p>
     </div>
   );
