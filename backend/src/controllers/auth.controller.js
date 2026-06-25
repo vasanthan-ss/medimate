@@ -12,18 +12,18 @@ exports.register = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phone) {
       return res.status(400).json({
-        message: "Name, email, and password are required",
+        message: "Name, email, phone and password are required",
       });
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters long",
+        message: "Password must be at least 8 characters long",
       });
     }
     
-    if(phone.length <10 || !(phone && /^\d+$/.test(phone))){
+    if(phone && (phone.length <10 || !(phone && /^\d+$/.test(phone)))){
       return res.status(400).json({
         message: "Invalid phone number",
       });

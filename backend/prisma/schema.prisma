@@ -39,6 +39,7 @@ model Medicine {
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
+  startDate DateTime @default(now())
+  endDate   DateTime?
   @@index([userId])
 }
