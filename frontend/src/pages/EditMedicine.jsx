@@ -1,8 +1,24 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { createMedicine } from "../services/medicineService";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  getMedicineById,
+  updateMedicine,
+} from "../services/medicineService";
 
-function AddMedicine() {
+function formatDateForInput(dateValue) {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().split("T")[0];
+}
+
+function EditMedicine() {
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -16,8 +32,39 @@ function AddMedicine() {
     endDate: "",
   });
 
+  const [pageLoading, setPageLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchMedicine = async () => {
+      try {
+        setPageLoading(true);
+        setError("");
+
+        const data = await getMedicineById(id);
+        const medicine = data.medicine;
+
+        setFormData({
+          name: medicine.name || "",
+          dosage: medicine.dosage || "",
+          instructions: medicine.instructions || "",
+          notes: medicine.notes || "",
+          stockCount: medicine.stockCount ?? "",
+          minimumStock: medicine.minimumStock ?? "",
+          startDate: formatDateForInput(medicine.startDate),
+          endDate: formatDateForInput(medicine.endDate),
+        });
+      } catch (err) {
+        console.error("Fetch medicine error:", err);
+        setError(err.response?.data?.message || "Failed to load medicine");
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    fetchMedicine();
+  }, [id]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -36,35 +83,37 @@ function AddMedicine() {
     }
 
     try {
-      setLoading(true);
+      setSaving(true);
 
-      await createMedicine({
+      await updateMedicine(id, {
         name: formData.name,
         dosage: formData.dosage,
         instructions: formData.instructions,
         notes: formData.notes,
         stockCount: formData.stockCount,
         minimumStock: formData.minimumStock,
-        startDate: formData.startDate || undefined,
-        endDate: formData.endDate || undefined,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
       });
 
       navigate("/medicines");
     } catch (err) {
-      console.error("Add medicine error:", err);
-      setError(err.response?.data?.message || "Failed to add medicine");
+      console.error("Update medicine error:", err);
+      setError(err.response?.data?.message || "Failed to update medicine");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (pageLoading) {
+    return <p>Loading medicine...</p>;
+  }
 
   return (
     <div>
       <div className="mb-4">
-        <h2 className="fw-bold mb-1">Add Medicine</h2>
-        <p className="text-muted mb-0">
-          Add basic medicine details. Reminder time will be added later.
-        </p>
+        <h2 className="fw-bold mb-1">Edit Medicine</h2>
+        <p className="text-muted mb-0">Update medicine details.</p>
       </div>
 
       <div className="row">
@@ -82,7 +131,6 @@ function AddMedicine() {
                     type="text"
                     name="name"
                     className="form-control"
-                    placeholder="Example: Metformin"
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -95,7 +143,6 @@ function AddMedicine() {
                     type="text"
                     name="dosage"
                     className="form-control"
-                    placeholder="Example: 500mg"
                     value={formData.dosage}
                     onChange={handleChange}
                   />
@@ -109,7 +156,6 @@ function AddMedicine() {
                     type="text"
                     name="instructions"
                     className="form-control"
-                    placeholder="Example: After food"
                     value={formData.instructions}
                     onChange={handleChange}
                   />
@@ -121,7 +167,6 @@ function AddMedicine() {
                     name="notes"
                     className="form-control"
                     rows="3"
-                    placeholder="Optional notes"
                     value={formData.notes}
                     onChange={handleChange}
                   />
@@ -136,7 +181,6 @@ function AddMedicine() {
                       type="number"
                       name="stockCount"
                       className="form-control"
-                      placeholder="Example: 20"
                       value={formData.stockCount}
                       onChange={handleChange}
                       min="0"
@@ -151,7 +195,6 @@ function AddMedicine() {
                       type="number"
                       name="minimumStock"
                       className="form-control"
-                      placeholder="Example: 5"
                       value={formData.minimumStock}
                       onChange={handleChange}
                       min="0"
@@ -191,9 +234,9 @@ function AddMedicine() {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={loading}
+                    disabled={saving}
                   >
-                    {loading ? "Saving..." : "Save Medicine"}
+                    {saving ? "Updating..." : "Update Medicine"}
                   </button>
 
                   <button
@@ -213,4 +256,4 @@ function AddMedicine() {
   );
 }
 
-export default AddMedicine;
+export default EditMedicine;

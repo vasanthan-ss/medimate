@@ -6,7 +6,7 @@ import Home from "./pages/Home";
 import Medicines from "./pages/Medicines";
 import AddMedicine from "./pages/AddMedicine";
 import Settings from "./pages/Settings";
-
+import EditMedicine from "./pages/EditMedicine";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 
@@ -23,7 +23,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
-
+        <Route path="/edit-medicine/:id" element={<EditMedicine />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
