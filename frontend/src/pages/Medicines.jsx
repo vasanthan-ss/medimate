@@ -5,7 +5,7 @@ import {
   getMedicines,
   pauseMedicine,
 } from "../services/medicineService";
-
+// import logo from "../assets/logo.png";
 function Medicines() {
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);

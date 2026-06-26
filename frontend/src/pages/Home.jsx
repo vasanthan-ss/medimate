@@ -1,6 +1,6 @@
 import PageHeader from "../components/ui/PageHeader";
 import Card from "../components/ui/Card";
-
+import logo from "../assets/logo.png";
 function Home() {
   return (
     <div>

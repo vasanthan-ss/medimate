@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutUser } from "../../services/authService";
-import logo from "../../../../pictures/logo.png";
+import logo from "../assets/logo.png";
 function Navbar({ user }) {
   const navigate = useNavigate();
 

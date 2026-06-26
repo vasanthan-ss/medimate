@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../services/authService";
-import logo from "../../../pictures/logo.png";
+import logo from "../assets/logo.png";
 function Register() {
   const navigate = useNavigate();
 
@@ -11,7 +11,6 @@ function Register() {
     phone: "",
     password: "",
   });
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
