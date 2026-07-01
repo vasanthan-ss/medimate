@@ -23,10 +23,19 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/edit-medicine/:id" element={<EditMedicine />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
+
+        <Route 
+          path="/edit-medicine/:id" 
+          element={
+            <ProtectedPage>
+              <EditMedicine />
+            </ProtectedPage>
+          } 
+        />
+        
         <Route
           path="/home"
           element={

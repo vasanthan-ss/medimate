@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMedicine } from "../services/medicineService";
+import { createSchedule } from "../services/scheduleService";
 
 function AddMedicine() {
   const navigate = useNavigate();
+
+  const [times, setTimes] = useState([""]);
+  const [scheduleType, setScheduleType] = useState("EVERYDAY");
+  const [selectedDays, setSelectedDays] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,6 +31,28 @@ function AddMedicine() {
     }));
   };
 
+  const handleTimeChange = (index, value) => {
+    setTimes((prev) =>
+      prev.map((time, i) => (i === index ? value : time))
+    );
+  };
+
+  const addTimeField = () => {
+    setTimes((prev) => [...prev, ""]);
+  };
+
+  const removeTimeField = (index) => {
+    setTimes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day)
+        ? prev.filter((item) => item !== day)
+        : [...prev, day]
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -35,16 +62,37 @@ function AddMedicine() {
       return;
     }
 
+    const validTimes = times.filter((time) => time.trim());
+
+    if (validTimes.length === 0) {
+      setError("At least one reminder time is required");
+      return;
+    }
+
+    if (scheduleType === "SELECTED" && selectedDays.length === 0) {
+      setError("Please select at least one day");
+      return;
+    }
+
     try {
       setLoading(true);
 
-      await createMedicine({
+      const medicineData = await createMedicine({
         name: formData.name,
         dosage: formData.dosage,
         instructions: formData.instructions,
         notes: formData.notes,
         stockCount: formData.stockCount,
         minimumStock: formData.minimumStock,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
+      });
+
+      await createSchedule({
+        medicineId: medicineData.medicine.id,
+        times: validTimes,
+        daysOfWeek:
+          scheduleType === "EVERYDAY" ? ["EVERYDAY"] : selectedDays,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
       });
@@ -63,7 +111,7 @@ function AddMedicine() {
       <div className="mb-4">
         <h2 className="fw-bold mb-1">Add Medicine</h2>
         <p className="text-muted mb-0">
-          Add basic medicine details. Reminder time will be added later.
+          Add medicine details and set reminder time.
         </p>
       </div>
 
@@ -186,6 +234,97 @@ function AddMedicine() {
                     />
                   </div>
                 </div>
+
+                <hr className="my-4" />
+
+                <h5 className="fw-bold mb-3">Reminder Time</h5>
+
+                {times.map((time, index) => (
+                  <div className="d-flex gap-2 mb-2" key={index}>
+                    <input
+                      type="time"
+                      className="form-control"
+                      value={time}
+                      onChange={(e) =>
+                        handleTimeChange(index, e.target.value)
+                      }
+                    />
+
+                    {times.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger"
+                        onClick={() => removeTimeField(index)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm mb-3"
+                  onClick={addTimeField}
+                >
+                  + Add another time
+                </button>
+
+                <div className="mb-3">
+                  <label className="form-label fw-semibold">Days</label>
+
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="scheduleType"
+                      id="everyday"
+                      checked={scheduleType === "EVERYDAY"}
+                      onChange={() => setScheduleType("EVERYDAY")}
+                    />
+                    <label className="form-check-label" htmlFor="everyday">
+                      Every day
+                    </label>
+                  </div>
+
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="radio"
+                      name="scheduleType"
+                      id="selectedDays"
+                      checked={scheduleType === "SELECTED"}
+                      onChange={() => setScheduleType("SELECTED")}
+                    />
+                    <label
+                      className="form-check-label"
+                      htmlFor="selectedDays"
+                    >
+                      Select days
+                    </label>
+                  </div>
+                </div>
+
+                {scheduleType === "SELECTED" && (
+                  <div className="d-flex flex-wrap gap-2 mb-3">
+                    {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(
+                      (day) => (
+                        <button
+                          key={day}
+                          type="button"
+                          className={`btn btn-sm ${
+                            selectedDays.includes(day)
+                              ? "btn-primary"
+                              : "btn-outline-primary"
+                          }`}
+                          onClick={() => toggleDay(day)}
+                        >
+                          {day}
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
 
                 <div className="d-flex gap-2">
                   <button
