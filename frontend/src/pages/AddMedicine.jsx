@@ -99,11 +99,17 @@ function AddMedicine() {
 
       navigate("/medicines");
     } catch (err) {
-      console.error("Add medicine error:", err);
-      setError(err.response?.data?.message || "Failed to add medicine");
-    } finally {
-      setLoading(false);
-    }
+    console.error("Add medicine or schedule error:", err);
+
+    const backendMessage =
+      err.response?.data?.message ||
+      err.message ||
+      "Failed to add medicine or schedule";
+
+    setError(backendMessage);
+  } finally {
+    setLoading(false);
+  }
   };
 
   return (
