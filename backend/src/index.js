@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/medicine", medicineRoutes);
+app.use("/api/medicines", medicineRoutes);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
