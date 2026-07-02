@@ -6,6 +6,33 @@ import {
   pauseMedicine,
 } from "../services/medicineService";
 // import logo from "../assets/logo.png";
+const formatTimes = (schedules) => {
+  if (!schedules || schedules.length === 0) {
+    return "No reminder time added";
+  }
+
+  const times = schedules.flatMap((schedule) => schedule.times || []);
+
+  if (times.length === 0) {
+    return "No reminder time added";
+  }
+
+  return times.join(", ");
+};
+
+const formatDays = (schedules) => {
+  if (!schedules || schedules.length === 0) {
+    return "No days selected";
+  }
+
+  const days = schedules[0].daysOfWeek || [];
+
+  if (days.includes("EVERYDAY")) {
+    return "Every day";
+  }
+
+  return days.join(", ");
+};
 function Medicines() {
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +167,13 @@ function Medicines() {
                     <strong>Instructions:</strong> {medicine.instructions}
                   </p>
                 )}
+                <p className="mb-2">
+                  <strong>Time:</strong> {formatTimes(medicine.schedules)}
+                </p>
 
+                <p className="mb-2">
+                  <strong>Days:</strong> {formatDays(medicine.schedules)}
+                </p>
                 <p className="mb-2">
                   <strong>Stock:</strong> {medicine.stockCount}
                 </p>

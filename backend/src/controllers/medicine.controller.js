@@ -74,6 +74,16 @@ exports.getMedicines = async (req, res) => {
       where: {
         userId: req.user.id,
       },
+      include: {
+        schedules: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -100,7 +110,15 @@ exports.getMedicineById = async (req, res) => {
       });
     }
 
-    const medicine = await getMedicineForUser(medicineId, req.user.id);
+    const medicine = await prisma.medicine.findFirst({
+      where: {
+        id: medicineId,
+        userId: req.user.id,
+      },
+      include: {
+        schedules: true,
+      },
+    });
 
     if (!medicine) {
       return res.status(404).json({
