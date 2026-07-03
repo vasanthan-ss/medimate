@@ -27,17 +27,24 @@ function AppLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-        <p className="text-secondary fw-semibold">Loading MediMate...</p>
+      <div className="min-vh-100 d-flex align-items-center justify-content-center">
+        <div className="text-center">
+          <div className="mm-brand-icon mx-auto mb-3">M</div>
+          <p className="text-secondary fw-semibold mb-0">
+            Loading MediMate...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="app-shell">
       <Navbar user={user} />
 
-      <main className="container py-4">{children}</main>
+      <main className="app-main">
+        <div className="page-container">{children}</div>
+      </main>
     </div>
   );
 }

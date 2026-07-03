@@ -43,11 +43,10 @@ const getIntakeKey = (scheduleId, time) => {
 };
 
 const getStatusBadgeClass = (status) => {
-  if (status === "TAKEN") return "bg-success";
-  if (status === "SKIPPED") return "bg-secondary";
-  return "bg-light text-dark";
+  if (status === "TAKEN") return "mm-status-active";
+  if (status === "SKIPPED") return "mm-status-paused";
+  return "mm-status-paused";
 };
-
 function Home() {
   const [todayMedicines, setTodayMedicines] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -132,9 +131,10 @@ function Home() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="fw-bold mb-1">{getGreeting()}</h2>
-        <p className="text-muted mb-0">
+      <div className="page-heading">
+        <div className="page-kicker">Today</div>
+        <h2 className="page-title">{getGreeting()}</h2>
+        <p className="page-subtitle">
           Here are your medicines scheduled for today.
         </p>
       </div>
@@ -142,43 +142,54 @@ function Home() {
       {error && <div className="alert alert-danger">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {loading && <p>Loading dashboard...</p>}
+      {loading && (
+        <div className="mm-empty-state">
+          <div className="mm-empty-icon">M</div>
+          <p className="text-muted mb-0">Loading dashboard...</p>
+        </div>
+      )}
 
       {!loading && !error && (
         <>
           <div className="row g-3 mb-4">
             <div className="col-12 col-md-6">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <h5 className="fw-bold mb-2">Next Reminder</h5>
+              <div className="card mm-card mm-stat-card h-100">
+                <div className="card-body position-relative">
+                  <p className="mm-stat-label">Next Reminder</p>
 
                   {summary?.nextReminder ? (
                     <>
+                      <h3 className="mm-stat-value">
+                        {formatTime(summary.nextReminder.time)}
+                      </h3>
                       <p className="mb-1">
                         <strong>{summary.nextReminder.name}</strong>{" "}
                         {summary.nextReminder.dosage || ""}
                       </p>
                       <p className="text-muted mb-0">
-                        At {formatTime(summary.nextReminder.time)}
+                        Your next scheduled medicine.
                       </p>
                     </>
                   ) : (
-                    <p className="text-muted mb-0">
-                      No more reminders for today.
-                    </p>
+                    <>
+                      <h3 className="mm-stat-value">All done</h3>
+                      <p className="text-muted mb-0">
+                        No more reminders for today.
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
             </div>
 
             <div className="col-12 col-md-6">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <h5 className="fw-bold mb-2">Today Summary</h5>
-                  <p className="mb-1">
-                    <strong>{summary?.totalToday || 0}</strong> doses scheduled
-                    today
-                  </p>
+              <div className="card mm-card mm-stat-card h-100">
+                <div className="card-body position-relative">
+                  <p className="mm-stat-label">Today Summary</p>
+                  <h3 className="mm-stat-value">
+                    {summary?.totalToday || 0}
+                  </h3>
+                  <p className="mb-1">doses scheduled today</p>
                   <p className="text-muted mb-0">
                     Low stock medicines: {summary?.lowStockCount || 0}
                   </p>
@@ -187,14 +198,23 @@ function Home() {
             </div>
           </div>
 
-          <div className="card border-0 shadow-sm">
+          <div className="card mm-card">
             <div className="card-body">
-              <h5 className="fw-bold mb-3">Today's Medicines</h5>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 className="fw-bold mb-1">Today's Medicines</h5>
+                  <p className="text-muted mb-0">
+                    Mark your medicine after taking it.
+                  </p>
+                </div>
+              </div>
 
               {todayMedicines.length === 0 && (
-                <p className="text-muted mb-0">
-                  No medicines scheduled for today.
-                </p>
+                <div className="mm-empty-state">
+                  <div className="mm-empty-icon">✓</div>
+                  <h5 className="fw-bold">No medicines for today</h5>
+                  <p className="text-muted mb-0">You are all set.</p>
+                </div>
               )}
 
               {todayMedicines.length > 0 && (
@@ -207,12 +227,16 @@ function Home() {
 
                     return (
                       <div
-                        className="border rounded p-3 d-flex flex-column flex-md-row justify-content-between gap-3"
+                        className="mm-medicine-item d-flex flex-column flex-md-row justify-content-between gap-3"
                         key={key}
                       >
                         <div>
-                          <p className="fw-bold mb-1">
-                            {formatTime(medicine.time)} - {medicine.name}
+                          <span className="mm-time-pill">
+                            {formatTime(medicine.time)}
+                          </span>
+
+                          <p className="fw-bold mb-1 mt-2">
+                            {medicine.name}
                           </p>
 
                           <p className="text-muted mb-1">
@@ -229,14 +253,14 @@ function Home() {
 
                         <div className="d-flex flex-column align-items-start align-items-md-end gap-2">
                           {medicine.isLowStock && (
-                            <span className="badge bg-warning text-dark">
+                            <span className="mm-status-pill mm-warning-pill">
                               Low stock
                             </span>
                           )}
 
                           {medicine.intakeStatus ? (
                             <span
-                              className={`badge ${getStatusBadgeClass(
+                              className={`mm-status-pill ${getStatusBadgeClass(
                                 medicine.intakeStatus
                               )}`}
                             >
@@ -277,17 +301,20 @@ function Home() {
           </div>
 
           {summary?.lowStockMedicines?.length > 0 && (
-            <div className="card border-0 shadow-sm mt-4">
+            <div className="card mm-card mt-4">
               <div className="card-body">
                 <h5 className="fw-bold mb-3">Low Stock</h5>
 
                 {summary.lowStockMedicines.map((medicine) => (
-                  <p
-                    className="mb-2"
+                  <div
+                    className="mm-medicine-item mb-2"
                     key={`low-stock-${medicine.medicineId}-${medicine.time}`}
                   >
-                    {medicine.name} has only {medicine.stockCount} left.
-                  </p>
+                    <p className="mb-0">
+                      {medicine.name} has only{" "}
+                      <strong>{medicine.stockCount}</strong> left.
+                    </p>
+                  </div>
                 ))}
               </div>
             </div>

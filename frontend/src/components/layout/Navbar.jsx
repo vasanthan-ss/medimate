@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutUser } from "../../services/authService";
 import logo from "../../assets/logo.png";
+
 function Navbar({ user }) {
   const navigate = useNavigate();
 
@@ -10,18 +11,20 @@ function Navbar({ user }) {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg bg-white border-bottom sticky-top shadow-sm">
-      <div className="container">
-        <NavLink className="navbar-brand fw-bold text-primary fs-4" to="/home">
-          <img  
+    <nav className="navbar navbar-expand-lg sticky-top mm-navbar">
+      <div className="container-fluid px-3 px-md-4">
+        <NavLink className="navbar-brand d-flex align-items-center py-0" to="/home">
+          <img
             src={logo}
-            alt="Medimate"
-            style={{ height: '80px', width: 'auto' }}
-            />
+            alt="MediMate"
+            width="96"
+            height="32"
+            className="img-fluid d-inline-block align-text-top"
+          />
         </NavLink>
 
         <button
-          className="navbar-toggler"
+          className="navbar-toggler border-0"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#mainNavbar"
@@ -33,30 +36,35 @@ function Navbar({ user }) {
         </button>
 
         <div className="collapse navbar-collapse" id="mainNavbar">
-          <div className="navbar-nav mx-auto gap-lg-2">
-            <NavLink className="nav-link fw-semibold" to="/home">
+          <div className="navbar-nav mx-auto gap-lg-2 mt-3 mt-lg-0">
+            <NavLink className="nav-link mm-nav-link" to="/home">
               Home
             </NavLink>
 
-            <NavLink className="nav-link fw-semibold" to="/medicines">
+            <NavLink className="nav-link mm-nav-link" to="/medicines">
               Medicines
             </NavLink>
 
-            <NavLink className="nav-link fw-semibold" to="/add-medicine">
+            <NavLink className="nav-link mm-nav-link" to="/add-medicine">
               Add Medicine
             </NavLink>
 
-            <NavLink className="nav-link fw-semibold" to="/settings">
+            <NavLink className="nav-link mm-nav-link" to="/settings">
               Settings
             </NavLink>
           </div>
 
           <div className="d-flex align-items-center gap-3 mt-3 mt-lg-0">
             {user && (
-              <span className="fw-semibold text-secondary">{user.name}</span>
+              <span className="fw-semibold text-secondary">
+                {user.name}
+              </span>
             )}
 
-            <button className="btn btn-danger btn-sm" onClick={handleLogout}>
+            <button
+              className="btn btn-outline-danger btn-sm"
+              onClick={handleLogout}
+            >
               Logout
             </button>
           </div>
