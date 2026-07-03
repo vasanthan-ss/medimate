@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
 import { getHomeSummary, getTodayMedicines } from "../services/homeService";
+import {
+  getTodayIntakes,
+  markDoseSkipped,
+  markDoseTaken,
+} from "../services/intakeService";
 
 const formatTime = (time) => {
   if (!time) return "";
@@ -16,6 +21,15 @@ const formatTime = (time) => {
   });
 };
 
+const getTimeFromDateValue = (dateValue) => {
+  const date = new Date(dateValue);
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+};
+
 const getGreeting = () => {
   const hour = new Date().getHours();
 
@@ -24,23 +38,56 @@ const getGreeting = () => {
   return "Good Evening";
 };
 
+const getIntakeKey = (scheduleId, time) => {
+  return `${scheduleId}-${time}`;
+};
+
+const getStatusBadgeClass = (status) => {
+  if (status === "TAKEN") return "bg-success";
+  if (status === "SKIPPED") return "bg-secondary";
+  return "bg-light text-dark";
+};
+
 function Home() {
   const [todayMedicines, setTodayMedicines] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoadingKey, setActionLoadingKey] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const fetchHomeData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [todayData, summaryData] = await Promise.all([
+      const [todayData, summaryData, intakeData] = await Promise.all([
         getTodayMedicines(),
         getHomeSummary(),
+        getTodayIntakes(),
       ]);
 
-      setTodayMedicines(todayData.medicines || []);
+      const intakeMap = {};
+
+      (intakeData.intakeLogs || []).forEach((log) => {
+        const time = getTimeFromDateValue(log.scheduledTime);
+        intakeMap[getIntakeKey(log.scheduleId, time)] = log;
+      });
+
+      const medicinesWithStatus = (todayData.medicines || []).map(
+        (medicine) => {
+          const key = getIntakeKey(medicine.scheduleId, medicine.time);
+          const intakeLog = intakeMap[key];
+
+          return {
+            ...medicine,
+            intakeStatus: intakeLog?.status || null,
+            intakeLogId: intakeLog?.id || null,
+          };
+        }
+      );
+
+      setTodayMedicines(medicinesWithStatus);
       setSummary(summaryData);
     } catch (err) {
       console.error("Home data error:", err);
@@ -54,6 +101,35 @@ function Home() {
     fetchHomeData();
   }, []);
 
+  const handleIntakeAction = async (medicine, action) => {
+    const key = getIntakeKey(medicine.scheduleId, medicine.time);
+
+    try {
+      setActionLoadingKey(key);
+      setError("");
+      setSuccess("");
+
+      const payload = {
+        scheduleId: medicine.scheduleId,
+        medicineId: medicine.medicineId,
+        time: medicine.time,
+      };
+
+      const data =
+        action === "TAKEN"
+          ? await markDoseTaken(payload)
+          : await markDoseSkipped(payload);
+
+      setSuccess(data.message);
+      await fetchHomeData();
+    } catch (err) {
+      console.error("Intake action error:", err);
+      setError(err.response?.data?.message || "Failed to update medicine dose");
+    } finally {
+      setActionLoadingKey("");
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -64,6 +140,7 @@ function Home() {
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
       {loading && <p>Loading dashboard...</p>}
 
@@ -122,37 +199,78 @@ function Home() {
 
               {todayMedicines.length > 0 && (
                 <div className="d-flex flex-column gap-3">
-                  {todayMedicines.map((medicine) => (
-                    <div
-                      className="border rounded p-3 d-flex flex-column flex-md-row justify-content-between gap-2"
-                      key={`${medicine.scheduleId}-${medicine.time}`}
-                    >
-                      <div>
-                        <p className="fw-bold mb-1">
-                          {formatTime(medicine.time)} - {medicine.name}
-                        </p>
+                  {todayMedicines.map((medicine) => {
+                    const key = getIntakeKey(
+                      medicine.scheduleId,
+                      medicine.time
+                    );
 
-                        <p className="text-muted mb-1">
-                          {medicine.dosage || "No dosage added"}
-                        </p>
-
-                        {medicine.instructions && (
-                          <p className="mb-0">
-                            <strong>Instructions:</strong>{" "}
-                            {medicine.instructions}
-                          </p>
-                        )}
-                      </div>
-
-                      {medicine.isLowStock && (
+                    return (
+                      <div
+                        className="border rounded p-3 d-flex flex-column flex-md-row justify-content-between gap-3"
+                        key={key}
+                      >
                         <div>
-                          <span className="badge bg-warning text-dark">
-                            Low stock
-                          </span>
+                          <p className="fw-bold mb-1">
+                            {formatTime(medicine.time)} - {medicine.name}
+                          </p>
+
+                          <p className="text-muted mb-1">
+                            {medicine.dosage || "No dosage added"}
+                          </p>
+
+                          {medicine.instructions && (
+                            <p className="mb-0">
+                              <strong>Instructions:</strong>{" "}
+                              {medicine.instructions}
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+
+                        <div className="d-flex flex-column align-items-start align-items-md-end gap-2">
+                          {medicine.isLowStock && (
+                            <span className="badge bg-warning text-dark">
+                              Low stock
+                            </span>
+                          )}
+
+                          {medicine.intakeStatus ? (
+                            <span
+                              className={`badge ${getStatusBadgeClass(
+                                medicine.intakeStatus
+                              )}`}
+                            >
+                              {medicine.intakeStatus}
+                            </span>
+                          ) : (
+                            <div className="d-flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-success"
+                                disabled={actionLoadingKey === key}
+                                onClick={() =>
+                                  handleIntakeAction(medicine, "TAKEN")
+                                }
+                              >
+                                Taken
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                disabled={actionLoadingKey === key}
+                                onClick={() =>
+                                  handleIntakeAction(medicine, "SKIPPED")
+                                }
+                              >
+                                Skip
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

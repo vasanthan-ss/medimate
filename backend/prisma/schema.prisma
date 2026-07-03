@@ -7,6 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model IntakeLog {
+  id Int @id @default(autoincrement())
+
+  userId     Int
+  medicineId Int
+  scheduleId Int
+
+  scheduledTime DateTime
+  takenTime     DateTime?
+
+  status IntakeStatus
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicine Medicine         @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  schedule MedicineSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scheduleId, scheduledTime])
+  @@index([userId])
+  @@index([medicineId])
+  @@index([scheduleId])
+  @@index([scheduledTime])
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   name         String
@@ -15,10 +41,11 @@ model User {
   passwordHash String
   timezone     String  @default("Asia/Kolkata")
 
-  medicines Medicine[]
-  schedules MedicineSchedule[]
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  medicines  Medicine[]
+  schedules  MedicineSchedule[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  intakeLogs IntakeLog[]
 }
 
 model Medicine {
@@ -34,13 +61,14 @@ model Medicine {
 
   isActive Boolean @default(true)
 
-  userId    Int
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  schedules MedicineSchedule[]
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  startDate DateTime           @default(now())
-  endDate   DateTime?
+  userId     Int
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules  MedicineSchedule[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  startDate  DateTime           @default(now())
+  endDate    DateTime?
+  intakeLogs IntakeLog[]
 
   @@index([userId])
 }
@@ -62,9 +90,16 @@ model MedicineSchedule {
   medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  intakeLogs IntakeLog[]
 
   @@index([medicineId])
   @@index([userId])
+}
+
+enum IntakeStatus {
+  TAKEN
+  SKIPPED
+  MISSED
 }
