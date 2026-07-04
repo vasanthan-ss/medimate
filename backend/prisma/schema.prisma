@@ -41,11 +41,12 @@ model User {
   passwordHash String
   timezone     String  @default("Asia/Kolkata")
 
-  medicines  Medicine[]
-  schedules  MedicineSchedule[]
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  intakeLogs IntakeLog[]
+  medicines    Medicine[]
+  schedules    MedicineSchedule[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  intakeLogs   IntakeLog[]
+  reminderLogs ReminderLog[]
 }
 
 model Medicine {
@@ -61,14 +62,15 @@ model Medicine {
 
   isActive Boolean @default(true)
 
-  userId     Int
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  schedules  MedicineSchedule[]
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  startDate  DateTime           @default(now())
-  endDate    DateTime?
-  intakeLogs IntakeLog[]
+  userId       Int
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules    MedicineSchedule[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  startDate    DateTime           @default(now())
+  endDate      DateTime?
+  intakeLogs   IntakeLog[]
+  reminderLogs ReminderLog[]
 
   @@index([userId])
 }
@@ -90,16 +92,49 @@ model MedicineSchedule {
   medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  intakeLogs IntakeLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  intakeLogs   IntakeLog[]
+  reminderLogs ReminderLog[]
 
   @@index([medicineId])
   @@index([userId])
+}
+
+model ReminderLog {
+  id Int @id @default(autoincrement())
+
+  userId     Int
+  medicineId Int
+  scheduleId Int
+
+  scheduledTime DateTime
+  sentTime      DateTime?
+  status        ReminderStatus @default(PENDING)
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicine Medicine         @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  schedule MedicineSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scheduleId, scheduledTime])
+  @@index([userId])
+  @@index([medicineId])
+  @@index([scheduleId])
+  @@index([scheduledTime])
+  @@index([status])
 }
 
 enum IntakeStatus {
   TAKEN
   SKIPPED
   MISSED
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
 }
