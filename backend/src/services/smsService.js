@@ -1,6 +1,5 @@
 const cron = require("node-cron");
 const prisma = require("../config/prisma");
-const { sendSms } = require("../services/smsService");
 
 const DAY_CODES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -48,12 +47,6 @@ const isScheduleForToday = (daysOfWeek) => {
   return daysOfWeek.includes(getTodayCode());
 };
 
-const buildReminderMessage = (medicine, time) => {
-  const dosageText = medicine.dosage ? ` ${medicine.dosage}` : "";
-
-  return `Reminder: Take ${medicine.name}${dosageText} now. Scheduled time: ${time}.`;
-};
-
 const createDueReminderLogs = async () => {
   try {
     const currentTime = getCurrentTimeString();
@@ -97,13 +90,6 @@ const createDueReminderLogs = async () => {
       },
       include: {
         medicine: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-          },
-        },
       },
     });
 
@@ -148,43 +134,15 @@ const createDueReminderLogs = async () => {
           medicineId: schedule.medicineId,
           scheduleId: schedule.id,
           scheduledTime,
-          status: "PENDING",
+          sentTime: new Date(),
+          status: "SENT",
         },
       });
 
-      try {
-        const message = buildReminderMessage(schedule.medicine, currentTime);
-
-        await sendSms({
-          to: schedule.user.phone,
-          message,
-        });
-
-        await prisma.reminderLog.update({
-          where: {
-            id: reminderLog.id,
-          },
-          data: {
-            status: "SENT",
-            sentTime: new Date(),
-          },
-        });
-
-        console.log(
-          `SMS reminder sent for ${schedule.medicine.name} at ${currentTime}`
-        );
-      } catch (smsError) {
-        console.error("SMS send error:", smsError.message);
-
-        await prisma.reminderLog.update({
-          where: {
-            id: reminderLog.id,
-          },
-          data: {
-            status: "FAILED",
-          },
-        });
-      }
+      console.log(
+        `Reminder created for ${schedule.medicine.name} at ${currentTime}`,
+        reminderLog.id
+      );
     }
   } catch (error) {
     console.error("Reminder job error:", error);
