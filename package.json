@@ -1,0 +1,45 @@
+{
+  "name": "medimate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Medication adherence platform — detection and escalation, not just reminders.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "worker": "node src/worker.js",
+    "test": "jest --runInBand --forceExit",
+    "test:watch": "jest --watch --runInBand",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.js",
+    "loadtest": "node scripts/loadTest.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "bcrypt": "^5.1.1",
+    "bullmq": "^5.12.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.5.0",
+    "node-cron": "^3.0.3",
+    "pdfkit": "^0.15.0",
+    "pino": "^9.4.0",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.5.1",
+    "pino-http": "^10.3.0",
+    "twilio": "^5.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "prisma": "^5.20.0",
+    "rate-limit-redis": "^4.2.0",
+    "supertest": "^7.0.0"
+  }
+}

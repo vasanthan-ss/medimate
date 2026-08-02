@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  phone        String?
+  timezone     String   @default("Asia/Kolkata")
+  createdAt    DateTime @default(now())
+
+  medicationsAsPatient      Medication[]           @relation("PatientMedications")
+  caregiverLinksAsPatient   PatientCaregiverLink[]  @relation("PatientLinks")
+  caregiverLinksAsCaregiver PatientCaregiverLink[]  @relation("CaregiverLinks")
+  refreshTokens             RefreshToken[]
+}
+
+enum Role {
+  PATIENT
+  CAREGIVER
+  ADMIN
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model PatientCaregiverLink {
+  id           String     @id @default(uuid())
+  patientId    String
+  caregiverId  String
+  relationship String
+  priority     Int        @default(1)
+  status       LinkStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+
+  patient   User @relation("PatientLinks", fields: [patientId], references: [id])
+  caregiver User @relation("CaregiverLinks", fields: [caregiverId], references: [id])
+
+  @@unique([patientId, caregiverId])
+  @@index([patientId])
+  @@index([caregiverId])
+}
+
+enum LinkStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+model Medication {
+  id                String    @id @default(uuid())
+  patientId         String
+  name              String
+  dosage            String
+  form              String
+  stockQuantity     Int       @default(0)
+  lowStockThreshold Int       @default(5)
+  active            Boolean   @default(true)
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  patient   User       @relation("PatientMedications", fields: [patientId], references: [id])
+  schedules Schedule[]
+
+  @@index([patientId])
+}
+
+model Schedule {
+  id                 String   @id @default(uuid())
+  medicationId       String
+  timeOfDay          String
+  daysOfWeek         Int[]
+  gracePeriodMinutes Int      @default(45)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  medication Medication  @relation(fields: [medicationId], references: [id])
+  intakeLogs IntakeLog[]
+
+  @@index([medicationId])
+}
+
+model IntakeLog {
+  id                 String              @id @default(uuid())
+  scheduleId         String
+  scheduledTime      DateTime
+  gracePeriodMinutes Int
+  status             IntakeStatus        @default(PENDING)
+  confirmedAt        DateTime?
+  confirmationMethod ConfirmationMethod?
+  snoozedAt          DateTime?
+  createdAt          DateTime            @default(now())
+
+  schedule    Schedule     @relation(fields: [scheduleId], references: [id])
+  escalations Escalation[]
+
+  @@unique([scheduleId, scheduledTime])
+  @@index([status])
+  @@index([status, scheduledTime])
+}
+
+enum IntakeStatus {
+  PENDING
+  TAKEN
+  TAKEN_LATE
+  MISSED
+  SNOOZED
+}
+
+enum ConfirmationMethod {
+  APP
+  SMS_REPLY
+  AUTO_TIMEOUT
+}
+
+model Escalation {
+  id             String    @id @default(uuid())
+  intakeLogId    String
+  caregiverId    String
+  tier           Int
+  channel        Channel
+  escalatedAt    DateTime  @default(now())
+  acknowledgedAt DateTime?
+
+  intakeLog IntakeLog @relation(fields: [intakeLogId], references: [id])
+
+  @@unique([intakeLogId, tier])
+  @@index([intakeLogId])
+  @@index([caregiverId])
+}
+
+enum Channel {
+  SMS
+  PUSH
+  EMAIL
+}
+
+model AdherenceSummary {
+  id            String   @id @default(uuid())
+  patientId     String
+  periodStart   DateTime
+  periodEnd     DateTime
+  takenCount    Int
+  missedCount   Int
+  adherenceRate Float
+  generatedAt   DateTime @default(now())
+
+  @@unique([patientId, periodStart, periodEnd])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  timestamp  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+}
